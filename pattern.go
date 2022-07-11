@@ -73,6 +73,7 @@ type pattern struct {
 
 	short    string
 	long     string
+	description string
 	argcount int
 }
 
@@ -131,12 +132,13 @@ func newCommand(name string, value interface{}) *pattern {
 	return &p
 }
 
-func newOption(short, long string, argcount int, value interface{}) *pattern {
-	// default: "", "", 0, false
+func newOption(short, long, description string, argcount int, value interface{}) *pattern {
+	// default: "", "", "", 0, false
 	var p pattern
 	p.t = patternOption
 	p.short = short
 	p.long = long
+	p.description = description
 	if long != "" {
 		p.name = long
 	} else {
@@ -149,6 +151,10 @@ func newOption(short, long string, argcount int, value interface{}) *pattern {
 		p.value = value
 	}
 	return &p
+}
+
+func cloneOption(opt *pattern) *pattern {
+	return newOption(opt.short, opt.long, opt.description, opt.argcount, opt.value)
 }
 
 func (p *pattern) flat(types patternType) (patternList, error) {
@@ -547,4 +553,24 @@ func (pl patternList) dictionary() map[string]interface{} {
 		dict[a.name] = a.value
 	}
 	return dict
+}
+
+type Option struct {
+	Name string
+	Short string
+	Long string
+	Description string
+}
+
+func (pl patternList) options() []Option {
+	var options []Option
+	for _, a := range pl {
+		options = append(options, Option{
+			Name: a.name,
+			Short: a.short,
+			Long: a.long,
+			Description: a.description,
+		})
+	}
+	return options
 }
