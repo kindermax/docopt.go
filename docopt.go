@@ -69,6 +69,12 @@ func (p *Parser) ParseArgs(doc string, argv []string, version string) (Opts, err
 	return p.parse(doc, argv, version)
 }
 
+// ParseOptions parses custom arguments based on the interface described in doc.
+// The main difference between ParseOptions and ParseArgs is that ParseOptions will not fail if no command provided
+func (p *Parser) ParseOptions(doc string, argv []string) ([]Option, error) {
+	return p.parseOptions(doc, argv)
+}
+
 // Deprecated: Parse is provided for backward compatibility with the original docopt.go package.
 // Please rather make use of ParseDoc, ParseArgs, or use your own custom Parser.
 func Parse(doc string, argv []string, help bool, version string, optionsFirst bool, exit ...bool) (map[string]interface{}, error) {
@@ -95,7 +101,7 @@ func (p *Parser) parse(doc string, argv []string, version string) (map[string]in
 	if p.HelpHandler == nil {
 		p.HelpHandler = DefaultParser.HelpHandler
 	}
-	args, output, err := parse(doc, argv, !p.SkipHelpFlags, version, p.OptionsFirst)
+	args, output, err := parseArgs(doc, argv, !p.SkipHelpFlags, version, p.OptionsFirst)
 	if _, ok := err.(*UserError); ok {
 		// the user gave us bad input
 		p.HelpHandler(err, output)
@@ -106,10 +112,22 @@ func (p *Parser) parse(doc string, argv []string, version string) (map[string]in
 	return args, err
 }
 
+
+func (p *Parser) parseOptions(doc string, argv []string) ([]Option, error) {
+	options, _, err := parseOptions(doc, argv, !p.SkipHelpFlags, "", p.OptionsFirst)
+	return options, err
+}
+
 // -----------------------------------------------------------------------------
 
-// parse and return a map of args, output and all errors
-func parse(doc string, argv []string, help bool, version string, optionsFirst bool) (args map[string]interface{}, output string, err error) {
+func parseCommon(doc string, argv []string, help bool, version string, optionsFirst bool) (
+	pat *pattern, 
+	patFlat patternList,
+	patternArgv patternList,
+	usage string,
+	output string, 
+	err error,
+) {
 	if argv == nil && len(os.Args) > 1 {
 		argv = os.Args[1:]
 	}
@@ -124,7 +142,7 @@ func parse(doc string, argv []string, help bool, version string, optionsFirst bo
 		err = newLanguageError("More than one \"usage:\" (case-insensitive).")
 		return
 	}
-	usage := usageSections[0]
+	usage = usageSections[0]
 
 	options := parseDefaults(doc)
 	formal, err := formalUsage(usage)
@@ -133,18 +151,18 @@ func parse(doc string, argv []string, help bool, version string, optionsFirst bo
 		return
 	}
 
-	pat, err := parsePattern(formal, &options)
+	pat, err = parsePattern(formal, &options)
 	if err != nil {
 		output = handleError(err, usage)
 		return
 	}
 
-	patternArgv, err := parseArgv(newTokenList(argv, errorUser), &options, optionsFirst)
+	patternArgv, err = parseArgv(newTokenList(argv, errorUser), &options, optionsFirst)
 	if err != nil {
 		output = handleError(err, usage)
 		return
 	}
-	patFlat, err := pat.flat(patternOption)
+	patFlat, err = pat.flat(patternOption)
 	if err != nil {
 		output = handleError(err, usage)
 		return
@@ -170,6 +188,18 @@ func parse(doc string, argv []string, help bool, version string, optionsFirst bo
 		output = handleError(err, usage)
 		return
 	}
+
+	return
+}
+
+// parse and return a map of args to its values, output and all errors
+func parseArgs(doc string, argv []string, help bool, version string, optionsFirst bool) (args map[string]interface{}, output string, err error) {
+	pat, patFlat, patternArgv, usage, output, err := parseCommon(doc, argv, help, version, optionsFirst)
+
+	if err != nil {
+		return
+	}
+	
 	matched, left, collected := pat.match(&patternArgv, nil)
 	if matched && len(*left) == 0 {
 		patFlat, err = pat.flat(patternDefault)
@@ -184,6 +214,20 @@ func parse(doc string, argv []string, help bool, version string, optionsFirst bo
 	err = newUserError("")
 	output = handleError(err, usage)
 	return
+}
+
+// parse and return a map of args to patterns, output and all errors
+func parseOptions(doc string, argv []string, help bool, version string, optionsFirst bool) (options []Option, output string, err error) {
+	pat, patFlat, _, usage, output, err := parseCommon(doc, argv, help, version, optionsFirst)
+	
+	if err != nil {
+		return
+	}
+	patFlat, err = pat.flat(patternDefault)
+	if err != nil {
+		return nil, handleError(err, usage), err
+	}
+	return  patFlat.options(), "", nil
 }
 
 func handleError(err error, usage string) string {
@@ -305,7 +349,7 @@ func parseOption(optionDescription string) *pattern {
 			}
 		}
 	}
-	return newOption(short, long, argcount, value)
+	return newOption(short, long, description, argcount, value)
 }
 
 func parseExpr(tokens *tokenList, options *patternList) (patternList, error) {
@@ -433,7 +477,7 @@ func parseLong(tokens *tokenList, options *patternList) (patternList, error) {
 		if eq == "=" {
 			argcount = 1
 		}
-		opt = newOption("", long, argcount, false)
+		opt = newOption("", long, "", argcount, false)
 		*options = append(*options, opt)
 		if tokens.err == errorUser {
 			var val interface{}
@@ -442,10 +486,10 @@ func parseLong(tokens *tokenList, options *patternList) (patternList, error) {
 			} else {
 				val = true
 			}
-			opt = newOption("", long, argcount, val)
+			opt = newOption("", long, "", argcount, val)
 		}
 	} else {
-		opt = newOption(similar[0].short, similar[0].long, similar[0].argcount, similar[0].value)
+		opt = cloneOption(similar[0])
 		if opt.argcount == 0 {
 			if value != nil {
 				return nil, tokens.errorFunc("%s must not have an argument", opt.long)
@@ -494,13 +538,13 @@ func parseShorts(tokens *tokenList, options *patternList) (patternList, error) {
 		if len(similar) > 1 {
 			return nil, tokens.errorFunc("%s is specified ambiguously %d times", short, len(similar))
 		} else if len(similar) < 1 {
-			opt = newOption(short, "", 0, false)
+			opt = newOption(short, "", "", 0, false)
 			*options = append(*options, opt)
 			if tokens.err == errorUser {
-				opt = newOption(short, "", 0, true)
+				opt = newOption(short, "", "", 0, true)
 			}
 		} else { // why copying is necessary here?
-			opt = newOption(short, similar[0].long, similar[0].argcount, similar[0].value)
+			opt = newOption(short, similar[0].long, similar[0].description, similar[0].argcount, similar[0].value)
 			var value interface{}
 			if opt.argcount > 0 {
 				if left == "" {

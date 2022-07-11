@@ -24,11 +24,11 @@ var testParser = &Parser{HelpHandler: NoHelpHandler}
 func TestPatternFlat(t *testing.T) {
 	q := patternList{
 		newArgument("N", nil),
-		newOption("-a", "", 0, false),
+		newOption("-a", "", "Append", 0, false),
 		newArgument("M", nil)}
 	p, err := newRequired(
 		newOneOrMore(newArgument("N", nil)),
-		newOption("-a", "", 0, false),
+		newOption("-a", "", "Append", 0, false),
 		newArgument("M", nil)).flat(patternDefault)
 	if reflect.DeepEqual(p, q) != true {
 		t.Error(err)
@@ -37,7 +37,7 @@ func TestPatternFlat(t *testing.T) {
 	q = patternList{newOptionsShortcut()}
 	p, err = newRequired(
 		newOptional(newOptionsShortcut()),
-		newOptional(newOption("-a", "", 0, false))).flat(patternOptionSSHORTCUT)
+		newOptional(newOption("-a", "", "Append", 0, false))).flat(patternOptionSSHORTCUT)
 	if reflect.DeepEqual(p, q) != true {
 		t.Error(err)
 	}
@@ -45,75 +45,75 @@ func TestPatternFlat(t *testing.T) {
 }
 
 func TestOption(t *testing.T) {
-	if !parseOption("-h").eq(newOption("-h", "", 0, false)) {
+	if !parseOption("-h  Help").eq(newOption("-h", "", "Help", 0, false)) {
 		t.Fail()
 	}
-	if !parseOption("--help").eq(newOption("", "--help", 0, false)) {
+	if !parseOption("--help  Help").eq(newOption("", "--help", "Help", 0, false)) {
 		t.Fail()
 	}
-	if !parseOption("-h --help").eq(newOption("-h", "--help", 0, false)) {
+	if !parseOption("-h --help  Help").eq(newOption("-h", "--help", "Help", 0, false)) {
 		t.Fail()
 	}
-	if !parseOption("-h, --help").eq(newOption("-h", "--help", 0, false)) {
-		t.Fail()
-	}
-
-	if !parseOption("-h TOPIC").eq(newOption("-h", "", 1, false)) {
-		t.Fail()
-	}
-	if !parseOption("--help TOPIC").eq(newOption("", "--help", 1, false)) {
-		t.Fail()
-	}
-	if !parseOption("-h TOPIC --help TOPIC").eq(newOption("-h", "--help", 1, false)) {
-		t.Fail()
-	}
-	if !parseOption("-h TOPIC, --help TOPIC").eq(newOption("-h", "--help", 1, false)) {
-		t.Fail()
-	}
-	if !parseOption("-h TOPIC, --help=TOPIC").eq(newOption("-h", "--help", 1, false)) {
+	if !parseOption("-h, --help  Help").eq(newOption("-h", "--help", "Help", 0, false)) {
 		t.Fail()
 	}
 
-	if !parseOption("-h  Description...").eq(newOption("-h", "", 0, false)) {
+	if !parseOption("-h TOPIC  Help").eq(newOption("-h", "", "Help", 1, false)) {
 		t.Fail()
 	}
-	if !parseOption("-h --help  Description...").eq(newOption("-h", "--help", 0, false)) {
+	if !parseOption("--help TOPIC  Help").eq(newOption("", "--help", "Help", 1, false)) {
 		t.Fail()
 	}
-	if !parseOption("-h TOPIC  Description...").eq(newOption("-h", "", 1, false)) {
+	if !parseOption("-h TOPIC --help TOPIC  Help").eq(newOption("-h", "--help", "Help", 1, false)) {
+		t.Fail()
+	}
+	if !parseOption("-h TOPIC, --help TOPIC  Help").eq(newOption("-h", "--help", "Help", 1, false)) {
+		t.Fail()
+	}
+	if !parseOption("-h TOPIC, --help=TOPIC  Help").eq(newOption("-h", "--help", "Help", 1, false)) {
 		t.Fail()
 	}
 
-	if !parseOption("    -h").eq(newOption("-h", "", 0, false)) {
+	if !parseOption("-h  Help").eq(newOption("-h", "", "Help", 0, false)) {
+		t.Fail()
+	}
+	if !parseOption("-h --help  Help").eq(newOption("-h", "--help", "Help", 0, false)) {
+		t.Fail()
+	}
+	if !parseOption("-h TOPIC  Help").eq(newOption("-h", "", "Help", 1, false)) {
 		t.Fail()
 	}
 
-	if !parseOption("-h TOPIC  Description... [default: 2]").eq(newOption("-h", "", 1, "2")) {
+	if !parseOption("    -h  Help").eq(newOption("-h", "", "Help", 0, false)) {
 		t.Fail()
 	}
-	if !parseOption("-h TOPIC  Descripton... [default: topic-1]").eq(newOption("-h", "", 1, "topic-1")) {
+
+	if !parseOption("-h TOPIC  Description... [default: 2]").eq(newOption("-h", "", "Description... [default: 2]", 1, "2")) {
 		t.Fail()
 	}
-	if !parseOption("--help=TOPIC  ... [default: 3.14]").eq(newOption("", "--help", 1, "3.14")) {
+	if !parseOption("-h TOPIC  Descripton... [default: topic-1]").eq(newOption("-h", "", "Descripton... [default: topic-1]", 1, "topic-1")) {
 		t.Fail()
 	}
-	if !parseOption("-h, --help=DIR  ... [default: ./]").eq(newOption("-h", "--help", 1, "./")) {
+	if !parseOption("--help=TOPIC  ... [default: 3.14]").eq(newOption("", "--help", "... [default: 3.14]", 1, "3.14")) {
 		t.Fail()
 	}
-	if !parseOption("-h TOPIC  Descripton... [dEfAuLt: 2]").eq(newOption("-h", "", 1, "2")) {
+	if !parseOption("-h, --help=DIR  ... [default: ./]").eq(newOption("-h", "--help", "... [default: ./]", 1, "./")) {
+		t.Fail()
+	}
+	if !parseOption("-h TOPIC  Descripton... [dEfAuLt: 2]").eq(newOption("-h", "", "Descripton... [dEfAuLt: 2]", 1, "2")) {
 		t.Fail()
 	}
 	return
 }
 
 func TestOptionName(t *testing.T) {
-	if newOption("-h", "", 0, false).name != "-h" {
+	if newOption("-h", "", "Help", 0, false).name != "-h" {
 		t.Fail()
 	}
-	if newOption("-h", "--help", 0, false).name != "--help" {
+	if newOption("-h", "--help", "Help", 0, false).name != "--help" {
 		t.Fail()
 	}
-	if newOption("", "--help", 0, false).name != "--help" {
+	if newOption("", "--help", "Help", 0, false).name != "--help" {
 		t.Fail()
 	}
 	return
@@ -145,6 +145,28 @@ func TestCommands(t *testing.T) {
 	return
 }
 
+
+func TestOnlyOptions(t *testing.T) {
+	v, err := testParser.ParseOptions("Usage: prog add [--debug]\nOptions:\n  -d, --debug  With debug", []string{})
+	
+	expect := []Option{{
+		Name: "add",
+		Short: "",
+		Long: "",
+		Description: "",
+	}, {
+		Name: "--debug",
+		Short: "-d",
+		Long: "--debug",
+		Description: "With debug",
+	}}
+
+	if reflect.DeepEqual(v, expect) != true {
+		t.Error(err)
+	}
+	return
+}
+
 func TestFormalUsage(t *testing.T) {
 	doc := `
     Usage: prog [-hv] ARG
@@ -167,9 +189,9 @@ func TestFormalUsage(t *testing.T) {
 
 func TestParseArgv(t *testing.T) {
 	o := patternList{
-		newOption("-h", "", 0, false),
-		newOption("-v", "--verbose", 0, false),
-		newOption("-f", "--file", 1, false),
+		newOption("-h", "", "", 0, false),
+		newOption("-v", "--verbose", "", 0, false),
+		newOption("-f", "--file", "", 1, false),
 	}
 
 	p, err := parseArgv(tokenListFromString(""), &o, false)
@@ -179,15 +201,15 @@ func TestParseArgv(t *testing.T) {
 	}
 
 	p, err = parseArgv(tokenListFromString("-h"), &o, false)
-	q = patternList{newOption("-h", "", 0, true)}
+	q = patternList{newOption("-h", "", "", 0, true)}
 	if reflect.DeepEqual(p, q) != true {
 		t.Error(err)
 	}
 
 	p, err = parseArgv(tokenListFromString("-h --verbose"), &o, false)
 	q = patternList{
-		newOption("-h", "", 0, true),
-		newOption("-v", "--verbose", 0, true),
+		newOption("-h", "", "", 0, true),
+		newOption("-v", "--verbose", "", 0, true),
 	}
 	if reflect.DeepEqual(p, q) != true {
 		t.Error(err)
@@ -195,8 +217,8 @@ func TestParseArgv(t *testing.T) {
 
 	p, err = parseArgv(tokenListFromString("-h --file f.txt"), &o, false)
 	q = patternList{
-		newOption("-h", "", 0, true),
-		newOption("-f", "--file", 1, "f.txt"),
+		newOption("-h", "", "", 0, true),
+		newOption("-f", "--file", "", 1, "f.txt"),
 	}
 	if reflect.DeepEqual(p, q) != true {
 		t.Error(err)
@@ -204,8 +226,8 @@ func TestParseArgv(t *testing.T) {
 
 	p, err = parseArgv(tokenListFromString("-h --file f.txt arg"), &o, false)
 	q = patternList{
-		newOption("-h", "", 0, true),
-		newOption("-f", "--file", 1, "f.txt"),
+		newOption("-h", "", "", 0, true),
+		newOption("-f", "--file", "", 1, "f.txt"),
 		newArgument("", "arg"),
 	}
 	if reflect.DeepEqual(p, q) != true {
@@ -214,8 +236,8 @@ func TestParseArgv(t *testing.T) {
 
 	p, err = parseArgv(tokenListFromString("-h --file f.txt arg arg2"), &o, false)
 	q = patternList{
-		newOption("-h", "", 0, true),
-		newOption("-f", "--file", 1, "f.txt"),
+		newOption("-h", "", "", 0, true),
+		newOption("-f", "--file", "", 1, "f.txt"),
 		newArgument("", "arg"),
 		newArgument("", "arg2"),
 	}
@@ -225,7 +247,7 @@ func TestParseArgv(t *testing.T) {
 
 	p, err = parseArgv(tokenListFromString("-h arg -- -v"), &o, false)
 	q = patternList{
-		newOption("-h", "", 0, true),
+		newOption("-h", "", "", 0, true),
 		newArgument("", "arg"),
 		newArgument("", "--"),
 		newArgument("", "-v"),
@@ -237,13 +259,13 @@ func TestParseArgv(t *testing.T) {
 
 func TestParsePattern(t *testing.T) {
 	o := patternList{
-		newOption("-h", "", 0, false),
-		newOption("-v", "--verbose", 0, false),
-		newOption("-f", "--file", 1, false),
+		newOption("-h", "", "", 0, false),
+		newOption("-v", "--verbose", "", 0, false),
+		newOption("-f", "--file", "", 1, false),
 	}
 
 	p, err := parsePattern("[ -h ]", &o)
-	q := newRequired(newOptional(newOption("-h", "", 0, false)))
+	q := newRequired(newOptional(newOption("-h", "", "", 0, false)))
 	if p.eq(q) != true {
 		t.Error(err)
 	}
@@ -260,8 +282,8 @@ func TestParsePattern(t *testing.T) {
 	q = newRequired(
 		newOptional(
 			newEither(
-				newOption("-h", "", 0, false),
-				newOption("-v", "--verbose", 0, false))))
+				newOption("-h", "", "", 0, false),
+				newOption("-v", "--verbose", "", 0, false))))
 	if p.eq(q) != true {
 		t.Error(err)
 	}
@@ -270,11 +292,11 @@ func TestParsePattern(t *testing.T) {
 	q = newRequired(
 		newRequired(
 			newEither(
-				newOption("-h", "", 0, false),
+				newOption("-h", "", "", 0, false),
 				newRequired(
-					newOption("-v", "--verbose", 0, false),
+					newOption("-v", "--verbose", "", 0, false),
 					newOptional(
-						newOption("-f", "--file", 1, nil))))))
+						newOption("-f", "--file", "", 1, nil))))))
 	if p.eq(q) != true {
 		t.Error(err)
 	}
@@ -283,11 +305,11 @@ func TestParsePattern(t *testing.T) {
 	q = newRequired(
 		newRequired(
 			newEither(
-				newOption("-h", "", 0, false),
+				newOption("-h", "", "", 0, false),
 				newRequired(
-					newOption("-v", "--verbose", 0, false),
+					newOption("-v", "--verbose", "", 0, false),
 					newOptional(
-						newOption("-f", "--file", 1, nil)),
+						newOption("-f", "--file", "", 1, nil)),
 					newOneOrMore(
 						newArgument("N", nil))))))
 	if p.eq(q) != true {
@@ -317,7 +339,7 @@ func TestParsePattern(t *testing.T) {
 	p, err = parsePattern("[ -h ] [N]", &o)
 	q = newRequired(
 		newOptional(
-			newOption("-h", "", 0, false)),
+			newOption("-h", "", "", 0, false)),
 		newOptional(
 			newArgument("N", nil)))
 	if p.eq(q) != true {
@@ -343,7 +365,7 @@ func TestParsePattern(t *testing.T) {
 
 	p, err = parsePattern("-v [options]", &o)
 	q = newRequired(
-		newOption("-v", "--verbose", 0, false),
+		newOption("-v", "--verbose", "", 0, false),
 		newOptional(
 			newOptionsShortcut()))
 	if p.eq(q) != true {
@@ -370,33 +392,33 @@ func TestParsePattern(t *testing.T) {
 }
 
 func TestOptionMatch(t *testing.T) {
-	v, w, x := newOption("-a", "", 0, false).match(
-		&patternList{newOption("-a", "", 0, true)}, nil)
-	y := patternList{newOption("-a", "", 0, true)}
+	v, w, x := newOption("-a", "", "", 0, false).match(
+		&patternList{newOption("-a", "", "", 0, true)}, nil)
+	y := patternList{newOption("-a", "", "", 0, true)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOption("-a", "", 0, false).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	v, w, x = newOption("-a", "", "", 0, false).match(
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOption("-a", "", 0, false).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	v, w, x = newOption("-a", "", "", 0, false).match(
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
 		t.Fail()
 	}
-	v, w, x = newOption("-a", "", 0, false).match(
+	v, w, x = newOption("-a", "", "", 0, false).match(
 		&patternList{newArgument("N", nil)}, nil)
 	y = patternList{newArgument("N", nil)}
 	if v != false ||
@@ -405,27 +427,27 @@ func TestOptionMatch(t *testing.T) {
 		t.Fail()
 	}
 
-	v, w, x = newOption("-a", "", 0, false).match(
+	v, w, x = newOption("-a", "", "", 0, false).match(
 		&patternList{
-			newOption("-x", "", 0, false),
-			newOption("-a", "", 0, false),
+			newOption("-x", "", "", 0, false),
+			newOption("-a", "", "", 0, false),
 			newArgument("N", nil)}, nil)
 	y = patternList{
-		newOption("-x", "", 0, false),
+		newOption("-x", "", "", 0, false),
 		newArgument("N", nil)}
-	z := patternList{newOption("-a", "", 0, false)}
+	z := patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOption("-a", "", 0, false).match(
+	v, w, x = newOption("-a", "", "", 0, false).match(
 		&patternList{
-			newOption("-a", "", 0, true),
-			newOption("-a", "", 0, false)}, nil)
-	y = patternList{newOption("-a", "", 0, false)}
-	z = patternList{newOption("-a", "", 0, true)}
+			newOption("-a", "", "", 0, true),
+			newOption("-a", "", "", 0, false)}, nil)
+	y = patternList{newOption("-a", "", "", 0, false)}
+	z = patternList{newOption("-a", "", "", 0, true)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
@@ -444,8 +466,8 @@ func TestArgumentMatch(t *testing.T) {
 	}
 
 	v, w, x = newArgument("N", nil).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
@@ -453,11 +475,11 @@ func TestArgumentMatch(t *testing.T) {
 	}
 
 	v, w, x = newArgument("N", nil).match(
-		&patternList{newOption("-x", "", 0, false),
-			newOption("-a", "", 0, false),
+		&patternList{newOption("-x", "", "", 0, false),
+			newOption("-a", "", "", 0, false),
 			newArgument("", 5)}, nil)
-	y = patternList{newOption("-x", "", 0, false),
-		newOption("-a", "", 0, false)}
+	y = patternList{newOption("-x", "", "", 0, false),
+		newOption("-a", "", "", 0, false)}
 	z := patternList{newArgument("N", 5)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -488,8 +510,8 @@ func TestCommandMatch(t *testing.T) {
 	}
 
 	v, w, x = newCommand("c", false).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
@@ -498,11 +520,11 @@ func TestCommandMatch(t *testing.T) {
 
 	v, w, x = newCommand("c", false).match(
 		&patternList{
-			newOption("-x", "", 0, false),
-			newOption("-a", "", 0, false),
+			newOption("-x", "", "", 0, false),
+			newOption("-a", "", "", 0, false),
 			newArgument("", "c")}, nil)
-	y = patternList{newOption("-x", "", 0, false),
-		newOption("-a", "", 0, false)}
+	y = patternList{newOption("-x", "", "", 0, false),
+		newOption("-a", "", "", 0, false)}
 	z := patternList{newCommand("c", true)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -523,16 +545,16 @@ func TestCommandMatch(t *testing.T) {
 }
 
 func TestOptionalMatch(t *testing.T) {
-	v, w, x := newOptional(newOption("-a", "", 0, false)).match(
-		&patternList{newOption("-a", "", 0, false)}, nil)
-	y := patternList{newOption("-a", "", 0, false)}
+	v, w, x := newOptional(newOption("-a", "", "", 0, false)).match(
+		&patternList{newOption("-a", "", "", 0, false)}, nil)
+	y := patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false)).match(
+	v, w, x = newOptional(newOption("-a", "", "", 0, false)).match(
 		&patternList{}, nil)
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
@@ -540,39 +562,39 @@ func TestOptionalMatch(t *testing.T) {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false)).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	v, w, x = newOptional(newOption("-a", "", "", 0, false)).match(
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-a", "", 0, false)}, nil)
-	y = patternList{newOption("-a", "", 0, false)}
+	v, w, x = newOptional(newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-a", "", "", 0, false)}, nil)
+	y = patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-b", "", 0, false)}, nil)
-	y = patternList{newOption("-b", "", 0, false)}
+	v, w, x = newOptional(newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-b", "", "", 0, false)}, nil)
+	y = patternList{newOption("-b", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	v, w, x = newOptional(newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
@@ -588,14 +610,14 @@ func TestOptionalMatch(t *testing.T) {
 		t.Fail()
 	}
 
-	v, w, x = newOptional(newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-b", "", 0, false),
-			newOption("-x", "", 0, false),
-			newOption("-a", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
-	z := patternList{newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)}
+	v, w, x = newOptional(newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-b", "", "", 0, false),
+			newOption("-x", "", "", 0, false),
+			newOption("-a", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
+	z := patternList{newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
@@ -604,34 +626,34 @@ func TestOptionalMatch(t *testing.T) {
 }
 
 func TestRequiredMatch(t *testing.T) {
-	v, w, x := newRequired(newOption("-a", "", 0, false)).match(
-		&patternList{newOption("-a", "", 0, false)}, nil)
-	y := patternList{newOption("-a", "", 0, false)}
+	v, w, x := newRequired(newOption("-a", "", "", 0, false)).match(
+		&patternList{newOption("-a", "", "", 0, false)}, nil)
+	y := patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
 		t.Fail()
 	}
 
-	v, w, x = newRequired(newOption("-a", "", 0, false)).match(&patternList{}, nil)
+	v, w, x = newRequired(newOption("-a", "", "", 0, false)).match(&patternList{}, nil)
 	if v != false ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
 		t.Fail()
 	}
 
-	v, w, x = newRequired(newOption("-a", "", 0, false)).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	v, w, x = newRequired(newOption("-a", "", "", 0, false)).match(
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
 		t.Fail()
 	}
-	v, w, x = newRequired(newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-a", "", 0, false)}, nil)
-	y = patternList{newOption("-a", "", 0, false)}
+	v, w, x = newRequired(newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-a", "", "", 0, false)}, nil)
+	y = patternList{newOption("-a", "", "", 0, false)}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, patternList{}) != true {
@@ -641,10 +663,10 @@ func TestRequiredMatch(t *testing.T) {
 
 func TestEitherMatch(t *testing.T) {
 	v, w, x := newEither(
-		newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(
-		&patternList{newOption("-a", "", 0, false)}, nil)
-	y := patternList{newOption("-a", "", 0, false)}
+		newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(
+		&patternList{newOption("-a", "", "", 0, false)}, nil)
+	y := patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
 		reflect.DeepEqual(*x, y) != true {
@@ -652,12 +674,12 @@ func TestEitherMatch(t *testing.T) {
 	}
 
 	v, w, x = newEither(
-		newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(&patternList{
-		newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)}, nil)
-	y = patternList{newOption("-b", "", 0, false)}
-	z := patternList{newOption("-a", "", 0, false)}
+		newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(&patternList{
+		newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)}, nil)
+	y = patternList{newOption("-b", "", "", 0, false)}
+	z := patternList{newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
@@ -665,10 +687,10 @@ func TestEitherMatch(t *testing.T) {
 	}
 
 	v, w, x = newEither(
-		newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false)).match(&patternList{
-		newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+		newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false)).match(&patternList{
+		newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	z = patternList{}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -677,13 +699,13 @@ func TestEitherMatch(t *testing.T) {
 	}
 
 	v, w, x = newEither(
-		newOption("-a", "", 0, false),
-		newOption("-b", "", 0, false),
-		newOption("-c", "", 0, false)).match(&patternList{
-		newOption("-x", "", 0, false),
-		newOption("-b", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
-	z = patternList{newOption("-b", "", 0, false)}
+		newOption("-a", "", "", 0, false),
+		newOption("-b", "", "", 0, false),
+		newOption("-c", "", "", 0, false)).match(&patternList{
+		newOption("-x", "", "", 0, false),
+		newOption("-b", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
+	z = patternList{newOption("-b", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
@@ -725,8 +747,8 @@ func TestOneOrMoreMatch(t *testing.T) {
 	}
 
 	v, w, x = newOneOrMore(newArgument("N", nil)).match(
-		&patternList{newOption("-x", "", 0, false)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+		&patternList{newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newOption("-x", "", "", 0, false)}
 	z = patternList{}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -746,9 +768,9 @@ func TestOneOrMoreMatch(t *testing.T) {
 
 	v, w, x = newOneOrMore(newArgument("N", nil)).match(&patternList{
 		newArgument("", 9),
-		newOption("-x", "", 0, false),
+		newOption("-x", "", "", 0, false),
 		newArgument("", 8)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
+	y = patternList{newOption("-x", "", "", 0, false)}
 	z = patternList{newArgument("N", 9), newArgument("N", 8)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -756,22 +778,22 @@ func TestOneOrMoreMatch(t *testing.T) {
 		t.Fail()
 	}
 
-	v, w, x = newOneOrMore(newOption("-a", "", 0, false)).match(&patternList{
-		newOption("-a", "", 0, false),
+	v, w, x = newOneOrMore(newOption("-a", "", "", 0, false)).match(&patternList{
+		newOption("-a", "", "", 0, false),
 		newArgument("", 8),
-		newOption("-a", "", 0, false)}, nil)
+		newOption("-a", "", "", 0, false)}, nil)
 	y = patternList{newArgument("", 8)}
-	z = patternList{newOption("-a", "", 0, false), newOption("-a", "", 0, false)}
+	z = patternList{newOption("-a", "", "", 0, false), newOption("-a", "", "", 0, false)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
 		reflect.DeepEqual(*x, z) != true {
 		t.Fail()
 	}
 
-	v, w, x = newOneOrMore(newOption("-a", "", 0, false)).match(&patternList{
+	v, w, x = newOneOrMore(newOption("-a", "", "", 0, false)).match(&patternList{
 		newArgument("", 8),
-		newOption("-x", "", 0, false)}, nil)
-	y = patternList{newArgument("", 8), newOption("-x", "", 0, false)}
+		newOption("-x", "", "", 0, false)}, nil)
+	y = patternList{newArgument("", 8), newOption("-x", "", "", 0, false)}
 	z = patternList{}
 	if v != false ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -779,17 +801,17 @@ func TestOneOrMoreMatch(t *testing.T) {
 		t.Fail()
 	}
 
-	v, w, x = newOneOrMore(newRequired(newOption("-a", "", 0, false),
+	v, w, x = newOneOrMore(newRequired(newOption("-a", "", "", 0, false),
 		newArgument("N", nil))).match(&patternList{
-		newOption("-a", "", 0, false),
+		newOption("-a", "", "", 0, false),
 		newArgument("", 1),
-		newOption("-x", "", 0, false),
-		newOption("-a", "", 0, false),
+		newOption("-x", "", "", 0, false),
+		newOption("-a", "", "", 0, false),
 		newArgument("", 2)}, nil)
-	y = patternList{newOption("-x", "", 0, false)}
-	z = patternList{newOption("-a", "", 0, false),
+	y = patternList{newOption("-x", "", "", 0, false)}
+	z = patternList{newOption("-a", "", "", 0, false),
 		newArgument("N", 1),
-		newOption("-a", "", 0, false),
+		newOption("-a", "", "", 0, false),
 		newArgument("N", 2)}
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -864,15 +886,15 @@ func TestListArgumentMatch(t *testing.T) {
 func TestBasicPatternMatching(t *testing.T) {
 	// ( -a N [ -x Z ] )
 	p := newRequired(
-		newOption("-a", "", 0, false),
+		newOption("-a", "", "", 0, false),
 		newArgument("N", nil),
 		newOptional(
-			newOption("-x", "", 0, false),
+			newOption("-x", "", "", 0, false),
 			newArgument("Z", nil)))
 
 	// -a N
-	q := patternList{newOption("-a", "", 0, false), newArgument("", 9)}
-	y := patternList{newOption("-a", "", 0, false), newArgument("N", 9)}
+	q := patternList{newOption("-a", "", "", 0, false), newArgument("", 9)}
+	y := patternList{newOption("-a", "", "", 0, false), newArgument("N", 9)}
 	v, w, x := p.match(&q, nil)
 	if v != true ||
 		reflect.DeepEqual(*w, patternList{}) != true ||
@@ -881,12 +903,12 @@ func TestBasicPatternMatching(t *testing.T) {
 	}
 
 	// -a -x N Z
-	q = patternList{newOption("-a", "", 0, false),
-		newOption("-x", "", 0, false),
+	q = patternList{newOption("-a", "", "", 0, false),
+		newOption("-x", "", "", 0, false),
 		newArgument("", 9), newArgument("", 5)}
 	y = patternList{}
-	z := patternList{newOption("-a", "", 0, false), newArgument("N", 9),
-		newOption("-x", "", 0, false), newArgument("Z", 5)}
+	z := patternList{newOption("-a", "", "", 0, false), newArgument("N", 9),
+		newOption("-x", "", "", 0, false), newArgument("Z", 5)}
 	v, w, x = p.match(&q, nil)
 	if v != true ||
 		reflect.DeepEqual(*w, y) != true ||
@@ -895,9 +917,9 @@ func TestBasicPatternMatching(t *testing.T) {
 	}
 
 	// -x N Z  # BZZ!
-	q = patternList{newOption("-x", "", 0, false),
+	q = patternList{newOption("-x", "", "", 0, false),
 		newArgument("", 9), newArgument("", 5)}
-	y = patternList{newOption("-x", "", 0, false),
+	y = patternList{newOption("-x", "", "", 0, false),
 		newArgument("", 9), newArgument("", 5)}
 	z = patternList{}
 	v, w, x = p.match(&q, nil)
@@ -909,9 +931,9 @@ func TestBasicPatternMatching(t *testing.T) {
 }
 
 func TestPatternEither(t *testing.T) {
-	p := newOption("-a", "", 0, false).transform()
+	p := newOption("-a", "", "", 0, false).transform()
 	q := newEither(newRequired(
-		newOption("-a", "", 0, false)))
+		newOption("-a", "", "", 0, false)))
 	if p.eq(q) != true {
 		t.Fail()
 	}
@@ -925,39 +947,39 @@ func TestPatternEither(t *testing.T) {
 
 	p = newRequired(
 		newEither(
-			newOption("-a", "", 0, false),
-			newOption("-b", "", 0, false)),
-		newOption("-c", "", 0, false)).transform()
+			newOption("-a", "", "", 0, false),
+			newOption("-b", "", "", 0, false)),
+		newOption("-c", "", "", 0, false)).transform()
 	q = newEither(
 		newRequired(
-			newOption("-a", "", 0, false),
-			newOption("-c", "", 0, false)),
+			newOption("-a", "", "", 0, false),
+			newOption("-c", "", "", 0, false)),
 		newRequired(
-			newOption("-b", "", 0, false),
-			newOption("-c", "", 0, false)))
+			newOption("-b", "", "", 0, false),
+			newOption("-c", "", "", 0, false)))
 	if p.eq(q) != true {
 		t.Fail()
 	}
 
-	p = newOptional(newOption("-a", "", 0, false),
-		newEither(newOption("-b", "", 0, false),
-			newOption("-c", "", 0, false))).transform()
+	p = newOptional(newOption("-a", "", "", 0, false),
+		newEither(newOption("-b", "", "", 0, false),
+			newOption("-c", "", "", 0, false))).transform()
 	q = newEither(
 		newRequired(
-			newOption("-b", "", 0, false), newOption("-a", "", 0, false)),
+			newOption("-b", "", "", 0, false), newOption("-a", "", "", 0, false)),
 		newRequired(
-			newOption("-c", "", 0, false), newOption("-a", "", 0, false)))
+			newOption("-c", "", "", 0, false), newOption("-a", "", "", 0, false)))
 	if p.eq(q) != true {
 		t.Fail()
 	}
 
-	p = newEither(newOption("-x", "", 0, false),
-		newEither(newOption("-y", "", 0, false),
-			newOption("-z", "", 0, false))).transform()
+	p = newEither(newOption("-x", "", "", 0, false),
+		newEither(newOption("-y", "", "", 0, false),
+			newOption("-z", "", "", 0, false))).transform()
 	q = newEither(
-		newRequired(newOption("-x", "", 0, false)),
-		newRequired(newOption("-y", "", 0, false)),
-		newRequired(newOption("-z", "", 0, false)))
+		newRequired(newOption("-x", "", "", 0, false)),
+		newRequired(newOption("-y", "", "", 0, false)),
+		newRequired(newOption("-z", "", "", 0, false)))
 	if p.eq(q) != true {
 		t.Fail()
 	}
@@ -973,9 +995,9 @@ func TestPatternEither(t *testing.T) {
 }
 
 func TestPatternFixRepeatingArguments(t *testing.T) {
-	p := newOption("-a", "", 0, false)
+	p := newOption("-a", "", "", 0, false)
 	p.fixRepeatingArguments()
-	if p.eq(newOption("-a", "", 0, false)) != true {
+	if p.eq(newOption("-a", "", "", 0, false)) != true {
 		t.Fail()
 	}
 
@@ -1392,7 +1414,7 @@ usage: pit stop`
 
 func TestIssue126DefaultsNotParsedCorrectlyWhenTabs(t *testing.T) {
 	section := "Options:\n\t--foo=<arg>  [default: bar]"
-	v := patternList{newOption("", "--foo", 1, "bar")}
+	v := patternList{newOption("", "--foo", "[default: bar]", 1, "bar")}
 	if reflect.DeepEqual(parseDefaults(section), v) != true {
 		t.Fail()
 	}
