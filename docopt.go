@@ -211,7 +211,7 @@ func parseArgs(doc string, argv []string, help bool, version string, optionsFirs
 		return
 	}
 
-	err = newUserError("")
+	err = newUnmatchedError(matched, left)
 	output = handleError(err, usage)
 	return
 }
