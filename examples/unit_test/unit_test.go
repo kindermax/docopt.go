@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/docopt/docopt-go"
+	"github.com/kindermax/docopt.go"
 	"reflect"
 	"testing"
 )

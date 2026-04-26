@@ -14,7 +14,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/docopt/docopt-go"
+	"github.com/kindermax/docopt.go"
 )
 
 func main() {
@@ -47,13 +47,13 @@ Options:
 ⚠ Use the alias "docopt-go". To use docopt in your Go code:
 
 ```go
-import "github.com/docopt/docopt-go"
+import "github.com/kindermax/docopt.go"
 ```
 
 To install docopt in your `$GOPATH`:
 
 ```console
-$ go get github.com/docopt/docopt-go
+$ go get github.com/kindermax/docopt.go
 ```
 
 ## API
@@ -103,7 +103,7 @@ var config struct {
 opts.Bind(&config)
 ```
 
-More documentation is available at [godoc.org](https://godoc.org/github.com/docopt/docopt-go).
+More documentation is available at [godoc.org](https://godoc.org/github.com/kindermax/docopt.go).
 
 ## Unit Testing
 

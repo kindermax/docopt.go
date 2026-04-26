@@ -1,3 +1,3 @@
-module github.com/docopt/docopt-go
+module github.com/kindermax/docopt.go
 
 go 1.17
